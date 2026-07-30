@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Guía de sustentación — De .NET Onion a Java Hexagonal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#0F1619;
+    --surface:#161F1F;
+    --surface-2:#1B2827;
+    --border:#283634;
+    --text:#E9EFEC;
+    --text-dim:#9AB0AB;
+    --text-faint:#5E7671;
+    --accent:#E2A94E;
+    --accent-ink:#241605;
+    --c-net:#8C7BDB;
+    --c-java:#6DB33F;
+    --c-bug:#D9695F;
+    --c-neutral:#B48EDB;
+    --radius-lg:18px;
+    --radius-md:12px;
+    --font-display: "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#F2F6F4; --surface:#FFFFFF; --surface-2:#EAF1EE; --border:#D9E4E0;
+      --text:#152220; --text-dim:#4C6863; --text-faint:#82998f;
+      --accent:#B9791F; --accent-ink:#FFF7EA;
+      --c-net:#5B4CB0; --c-java:#4A8F2C; --c-bug:#B8453B; --c-neutral:#7C55A8;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1619; --surface:#161F1F; --surface-2:#1B2827; --border:#283634;
+    --text:#E9EFEC; --text-dim:#9AB0AB; --text-faint:#5E7671;
+    --accent:#E2A94E; --accent-ink:#241605;
+    --c-net:#8C7BDB; --c-java:#6DB33F; --c-bug:#D9695F; --c-neutral:#B48EDB;
+  }
+  :root[data-theme="light"]{
+    --bg:#F2F6F4; --surface:#FFFFFF; --surface-2:#EAF1EE; --border:#D9E4E0;
+    --text:#152220; --text-dim:#4C6863; --text-faint:#82998f;
+    --accent:#B9791F; --accent-ink:#FFF7EA;
+    --c-net:#5B4CB0; --c-java:#4A8F2C; --c-bug:#B8453B; --c-neutral:#7C55A8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-body);
+    line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+  }
+  a{color:var(--accent);}
+  .page{max-width:640px;margin:0 auto;padding:0 0 3.5rem;}
+
+  .head{
+    position:sticky; top:0; z-index:30;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--border);
+    padding:.9rem 1.1rem .75rem;
+  }
+  .eyebrow{margin:0 0 .15rem; font-size:.68rem; letter-spacing:.11em; text-transform:uppercase; color:var(--accent); font-weight:600;}
+  .head h1{margin:0 0 .75rem; font-family:var(--font-display); font-weight:600; font-size:1.4rem; line-height:1.22; text-wrap:balance; letter-spacing:.01em;}
+  .head h1 span{color:var(--text-dim); font-weight:400; font-style:italic;}
+  .tabbar{display:flex; gap:.3rem; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:.25rem;}
+  .tab-btn{flex:1; appearance:none; border:0; background:transparent; color:var(--text-dim); font:inherit; font-size:.83rem; font-weight:600; padding:.5rem .6rem; border-radius:999px; cursor:pointer; transition:background .18s ease, color .18s ease;}
+  .tab-btn.is-active{background:var(--accent); color:var(--accent-ink);}
+
+  .jumprow{position:sticky; top:5.5rem; z-index:20; display:flex; gap:.4rem; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:.6rem 1.1rem; background:var(--bg); border-bottom:1px solid var(--border); scrollbar-width:none;}
+  .jumprow::-webkit-scrollbar{display:none;}
+  .jumprow.is-hidden{display:none;}
+  .jump-chip{flex:0 0 auto; appearance:none; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); font:inherit; font-size:.78rem; font-variant-numeric:tabular-nums; width:2.05rem; height:2.05rem; border-radius:50%; cursor:pointer; font-weight:600;}
+  .jump-chip:active{background:var(--surface-2);}
+
+  main{padding:1.1rem;}
+  .panel{display:none;}
+  .panel.is-active{display:block;}
+
+  .flash{background:var(--surface-2); border:1px solid var(--border); border-left:5px solid var(--accent); border-radius:var(--radius-md); padding:1rem 1.1rem; margin-bottom:1.1rem;}
+  .flash .mini-label{color:var(--accent);}
+  .flash p{margin:.5rem 0 0; font-size:.97rem;}
+  .flash p:first-of-type{margin-top:.6rem;}
+  .lead{color:var(--text-dim); font-size:.95rem; margin:0 0 1.1rem;}
+
+  .panel-toolbar{display:flex; justify-content:flex-end; margin-bottom:.6rem;}
+  .toolbar-btn{appearance:none; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); font:inherit; font-size:.78rem; font-weight:600; padding:.4rem .8rem; border-radius:999px; cursor:pointer;}
+
+  details.card{background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--layer, var(--c-neutral)); border-radius:var(--radius-lg); margin-bottom:.75rem; overflow:hidden;}
+  details.card summary{list-style:none; cursor:pointer; padding:.85rem 1rem; display:flex; align-items:center; gap:.7rem;}
+  details.card summary::-webkit-details-marker{display:none;}
+  .num{flex:0 0 auto; width:2.1rem; height:2.1rem; border-radius:50%; background:var(--layer, var(--c-neutral)); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:.95rem; font-variant-numeric:tabular-nums;}
+  .summary-text{flex:1; min-width:0;}
+  .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.05rem; color:var(--text); text-wrap:balance;}
+  .card-tag{display:block; font-size:.72rem; color:var(--text-faint); margin-top:.1rem; letter-spacing:.03em;}
+  .chev{flex:0 0 auto; width:1.1rem; height:1.1rem; position:relative; color:var(--text-faint);}
+  .chev::before, .chev::after{content:""; position:absolute; left:50%; top:50%; width:.62rem; height:2px; background:currentColor; transform-origin:center;}
+  .chev::before{transform:translate(-50%,-50%) rotate(90deg); transition:opacity .15s ease;}
+  .chev::after{transform:translate(-50%,-50%);}
+  details[open] .chev::before{opacity:0;}
+
+  .card-body{padding:0 1.1rem 1.05rem; border-top:1px solid var(--border); margin-top:0;}
+  .card-body > *{margin-top:.95rem;}
+  .mini-label{display:block; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--text-faint); margin-bottom:.3rem;}
+  .card-body p{margin:0; font-size:.96rem;}
+  .hook{font-family:var(--font-display); font-style:italic; font-size:1.06rem; color:var(--text); padding-top:.95rem; margin:0; text-wrap:balance;}
+  .voice{background:var(--surface-2); border-radius:var(--radius-md); padding:.75rem .9rem; font-size:.93rem; color:var(--text-dim); font-style:italic;}
+  .qa .q{font-weight:700; color:var(--accent); font-size:.93rem;}
+  .qa .a{margin-top:.3rem; font-size:.93rem; color:var(--text-dim);}
+  code.inline{font-family:var(--font-mono); font-size:.86em; background:var(--surface-2); padding:.05em .35em; border-radius:5px; color:var(--text);}
+
+  .section-title{font-family:var(--font-display); font-size:1.25rem; font-weight:600; margin:2rem 0 .9rem; text-wrap:balance;}
+
+  /* ---- prompt cards ---- */
+  details.card.prompt{border-left-width:5px;}
+  .prompt-slidefor{display:inline-block; font-size:.68rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--text-faint); border:1px solid var(--border); border-radius:999px; padding:.05rem .5rem; margin-top:.2rem;}
+  .prompt-box{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-md); padding:.85rem .95rem; font-family:var(--font-mono); font-size:.84rem; color:var(--text); white-space:pre-wrap; word-break:break-word; position:relative;}
+  .copy-btn{appearance:none; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); font:inherit; font-size:.74rem; font-weight:600; padding:.35rem .7rem; border-radius:999px; cursor:pointer; margin-top:.6rem;}
+  .copy-btn.copied{color:var(--c-java); border-color:var(--c-java);}
+  .prompt-note{font-size:.88rem; color:var(--text-dim);}
+
+  .foot{text-align:center; padding:1.6rem 1.1rem 0; color:var(--text-faint); font-size:.78rem;}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="head">
+    <div class="head-inner">
+      <p class="eyebrow">Guía para presentar la sustentación</p>
+      <h1>De .NET Onion a Java Hexagonal <span>— la historia real</span></h1>
+    </div>
+    <div class="tabbar" role="tablist">
+      <button class="tab-btn is-active" data-tab="slides" role="tab" aria-selected="true" id="tabbtn-slides">Diapositivas</button>
+      <button class="tab-btn" data-tab="gemini" role="tab" aria-selected="false" id="tabbtn-gemini">Prompts para Gemini</button>
+    </div>
+  </header>
+
+  <nav class="jumprow" id="jumprow" aria-label="Ir a una diapositiva">
+    <button class="jump-chip" data-jump="slide-1">1</button>
+    <button class="jump-chip" data-jump="slide-2">2</button>
+    <button class="jump-chip" data-jump="slide-3">3</button>
+    <button class="jump-chip" data-jump="slide-4">4</button>
+    <button class="jump-chip" data-jump="slide-5">5</button>
+    <button class="jump-chip" data-jump="slide-6">6</button>
+    <button class="jump-chip" data-jump="slide-7">7</button>
+    <button class="jump-chip" data-jump="slide-8">8</button>
+    <button class="jump-chip" data-jump="slide-9">9</button>
+    <button class="jump-chip" data-jump="slide-10">10</button>
+    <button class="jump-chip" data-jump="slide-11">11</button>
+    <button class="jump-chip" data-jump="slide-12">12</button>
+    <button class="jump-chip" data-jump="slide-13">13</button>
+    <button class="jump-chip" data-jump="slide-14">14</button>
+    <button class="jump-chip" data-jump="slide-15">15</button>
+    <button class="jump-chip" data-jump="slide-16">16</button>
+  </nav>
+
+  <main>
+
+    <!-- ======================= PANEL: DIAPOSITIVAS ======================= -->
+    <section class="panel is-active" id="panel-slides">
+
+      <div class="flash">
+        <span class="mini-label">Resumen relámpago — léelo justo antes de entrar</span>
+        <p>El PPTX (<code class="inline">docs/Complejidad_Migracion_NET_a_Java_Hexagonal.pptx</code>, 16 diapositivas) cuenta una migración real: <strong>arquitectura_2_t2</strong> (.NET 10, Onion) se convirtió en <strong>arquitecttura_2_t3</strong> (Java 17 + Spring Boot 4.1, Hexagonal). Se movieron dos ejes a la vez — lenguaje/framework y arquitectura — y se dejó quieto un tercero a propósito: la base de datos, PostgreSQL en ambos lados.</p>
+        <p>El hilo que sostiene toda la charla: <strong>74 de 74 tests pasaban y el reactor Maven compilaba limpio</strong>, y aun así la aplicación no arrancaba la primera vez que se corrió de verdad en Docker. Los 3 casos reales (diapositivas 9-11) son la prueba de que "compila" y "funciona" son promesas distintas — y la diapositiva 13 extiende esa misma idea a una pregunta hipotética: ¿qué hubiera pasado si, además, se cambiaba de motor de base de datos?</p>
+      </div>
+
+      <div class="panel-toolbar"><button class="toolbar-btn" id="toggleAllSlides">Expandir todo</button></div>
+
+      <!-- SLIDE 1 -->
+      <details class="card" id="slide-1" style="--layer:var(--c-neutral)">
+        <summary>
+          <span class="num">1</span>
+          <span class="summary-text">
+            <span class="card-title">Portada</span>
+            <span class="card-tag">Contexto general</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Dos ejes de cambio a la vez, un tercero dejado quieto a propósito — y las costuras que igual se rompieron primero.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>La portada ya adelanta la tesis completa de la charla en una frase: esto no es "aprendimos Java", es una migración de dos ejes simultáneos (lenguaje/framework y arquitectura) que decidió, a propósito, no tocar un tercero (la base de datos). Esa disciplina de no tocar los tres a la vez es exactamente lo que evitó que la historia fuera peor. Los chips <code class="inline">arquitectura_2_t2 → arquitecttura_2_t3</code> anclan visualmente que existen dos repositorios reales, no un ejercicio teórico.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Les voy a contar la migración real de un sistema POS de farmacia: de .NET con arquitectura Onion a Java con arquitectura Hexagonal. Movimos el lenguaje y la arquitectura al mismo tiempo, pero dejamos la base de datos quieta a propósito — y aun así hubo sorpresas."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Por qué el nombre del segundo repo tiene una "t" extra (arquitecttura)?</p>
+            <p class="a">Es simplemente el nombre real de la carpeta del proyecto en este entorno — no tiene significado técnico. Vale la pena aclararlo de una vez para que no distraiga después.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 2 -->
+      <details class="card" id="slide-2" style="--layer:var(--c-neutral)">
+        <summary>
+          <span class="num">2</span>
+          <span class="summary-text">
+            <span class="card-title">Agenda</span>
+            <span class="card-tag">De qué vamos a hablar</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Tu propio índice: si te trabas en vivo, este es el mapa al que puedes volver.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>El orden va de lo esperado a lo inesperado: primero el punto de partida y el marco conceptual de los "3 ejes", después la fricción que cualquiera ya anticiparía, y recién ahí los 3 casos reales que solo aparecieron al correr todo de verdad. Cierra con el eje hipotético (base de datos) y una explicación de por qué el costo no es lineal, sino combinatorio.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Primero el contexto y el marco de los tres ejes de cambio. Después la fricción esperada. Luego tres casos reales de bugs que aparecieron recién al probar todo en Docker y en el navegador. Cierro con qué hubiera pasado si también tocábamos la base de datos."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Consejo</span>
+            <p class="a">Si una pregunta te descoloca, vuelve a este índice: te dice en qué parte del argumento estabas y qué venía después.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 3 -->
+      <details class="card" id="slide-3" style="--layer:var(--c-net)">
+        <summary>
+          <span class="num">3</span>
+          <span class="summary-text">
+            <span class="card-title">Punto de partida</span>
+            <span class="card-tag">arquitectura_2_t2 no era un prototipo</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">33 entidades, 17 controllers, 44 reglas de negocio ya funcionando de verdad.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Esto importa porque cambia la naturaleza del riesgo: no se trata de diseñar un sistema nuevo, sino de preservar exactamente el comportamiento de uno que ya funcionaba. Cada regla RN01-RN44 (FEFO, copago, receta retenida, anulación por fecha...) tenía que sobrevivir el viaje sin perder ni un matiz. Y el frontend React se mantuvo sin reescribir — la única variable que se congeló a propósito para no sumar un cuarto eje de cambio.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"No migramos un esqueleto, migramos un sistema completo con 44 reglas de negocio finas. Y decidimos no tocar el frontend — esa decisión sola ya evitó sumar un cuarto eje de cambio simultáneo."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Por qué no reescribir también el frontend a Angular, como sugería el documento original?</p>
+            <p class="a">Porque cada eje de cambio adicional multiplica los puntos donde algo puede salir mal de forma impredecible — exactamente el fenómeno que se explica en la diapositiva 14. Reescribir el frontend hubiera sido un cuarto eje sin necesidad real.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 4 -->
+      <details class="card" id="slide-4" style="--layer:var(--c-neutral)">
+        <summary>
+          <span class="num">4</span>
+          <span class="summary-text">
+            <span class="card-title">El marco: 3 ejes de cambio</span>
+            <span class="card-tag">Concepto central de la charla</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Lenguaje, arquitectura, base de datos: tres ejes independientes, y una regla que ya existía para no moverlos todos juntos.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Esta es la diapositiva que sostiene el argumento de toda la charla. Cualquier migración real se puede descomponer en ejes de cambio independientes entre sí. Aquí hubo tres candidatos: lenguaje/framework (C#/.NET → Java/Spring), arquitectura (Onion → Hexagonal) y motor de base de datos (Postgres → ¿SQL Server?, como sugería el documento original). Los dos primeros se movieron. El tercero se dejó quieto a propósito — y esa decisión está documentada explícitamente como regla del proyecto (<code class="inline">CLAUDE.md</code>): "no modificar simultáneamente lenguaje, base de datos y frontend sin un plan gradual".</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Toda migración se puede pensar como varios ejes de cambio independientes. Acá había tres candidatos y solo movimos dos; el tercero, la base de datos, se dejó quieto a propósito, y esa regla ya estaba escrita antes de empezar."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Quién decidió no tocar la base de datos si el documento original pedía SQL Server?</p>
+            <p class="a">Fue una decisión de arquitectura documentada explícitamente: reducir el riesgo del corte migrando lenguaje y arquitectura primero, sin sumar además un cambio de motor de base de datos a mitad de camino.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 5 -->
+      <details class="card" id="slide-5" style="--layer:var(--c-java)">
+        <summary>
+          <span class="num">5</span>
+          <span class="summary-text">
+            <span class="card-title">Comparación visual</span>
+            <span class="card-tag">Onion vs. Hexagonal</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Un proyecto con capas por convención contra seis módulos Maven con límites físicos.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>La diferencia central no es filosófica, es física: en Onion, las 4 capas viven en <em>un solo proyecto compilable</em>, y nada impide en la práctica que alguien importe algo de Infrastructure desde un caso de uso si el equipo no es disciplinado. En Hexagonal, cada capa es un módulo Maven separado (<code class="inline">pos-domain</code>, <code class="inline">pos-application</code>, <code class="inline">pos-adapter-in-rest</code>, <code class="inline">pos-adapter-out-persistence</code>, <code class="inline">pos-adapter-out-external</code>, <code class="inline">pos-bootstrap</code>) — ese mismo error de arquitectura directamente no compila.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Onion vive en un solo proyecto con límites por convención. Hexagonal separa cada responsabilidad en un módulo Maven distinto — los límites ya no dependen de la disciplina del equipo, los vigila el compilador."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Eso significa que Hexagonal es "mejor" que Onion?</p>
+            <p class="a">Es más estricto, no necesariamente mejor para cualquier proyecto: cuesta más archivos e indirección. Para un sistema con 44 reglas de negocio finas que hay que poder probar y aislar, el costo se justifica.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 6 -->
+      <details class="card" id="slide-6" style="--layer:var(--c-net)">
+        <summary>
+          <span class="num">6</span>
+          <span class="summary-text">
+            <span class="card-title">Distribución del esfuerzo</span>
+            <span class="card-tag">Dónde cae realmente la carga</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">El adaptador de persistencia es, con diferencia, el más caro de escribir.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Dominio es alto volumen pero bajo riesgo: mecánico, exhaustivo, pero directo. Aplicación se multiplica porque Hexagonal exige separar puertos de entrada (casos de uso) además de los repositorios que Onion ya tenía. El adaptador de persistencia es el más costoso técnicamente: 27 tablas, mapeo JPA-dominio, migraciones Flyway escritas a mano (EF Core las generaba solo) y bloqueo optimista/pesimista para stock y recetas. El adaptador externo (central, seguros) es barato en código pero alto en incertidumbre porque se implementa contra mocks — el riesgo se traslada a producción, no se elimina.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Si me preguntan dónde se fue el tiempo, la respuesta corta es: en el adaptador de persistencia. Escribir a mano lo que EF Core generaba solo, más la concurrencia de stock y recetas, es la parte más cara técnicamente."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Por qué el adaptador externo es "bajo en código, alto en incertidumbre"?</p>
+            <p class="a">Porque se construyó contra mocks mientras no existe el contrato real de la central o del proveedor de seguros. El código es simple de escribir, pero el riesgo de que la integración real no calce con el mock queda pendiente para producción.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 7 -->
+      <details class="card" id="slide-7" style="--layer:var(--c-net)">
+        <summary>
+          <span class="num">7</span>
+          <span class="summary-text">
+            <span class="card-title">Fricción esperada</span>
+            <span class="card-tag">Lo que cualquier lista ya anticipa</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Todo esto ya se sabía antes de escribir la primera línea de código Java.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Seis fricciones típicas de C#→Java: Value Objects sin operadores sobrecargados (cada cálculo de <code class="inline">Dinero</code> se reescribe con métodos con nombre), Flyway a mano en vez de EF Core Migrations, concurrencia explícita en JPA para stock y recetas retenidas, capas físicas que ahora si impiden errores de arquitectura, enums <code class="inline">[Flags]</code> convertidos a <code class="inline">EnumSet</code>, y Spring Security configurado explícitamente en vez del pipeline integrado de ASP.NET. Ninguna de estas es una sorpresa — son el costo conocido de antemano de cambiar de lenguaje y arquitectura a la vez.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Esta lista la podíamos escribir antes de empezar: sabíamos que Java no tiene operadores sobrecargados, que Flyway hay que escribirlo a mano, que la concurrencia se modela distinto. Lo que viene después no lo sabíamos."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Cuál de estas seis fricciones fue la que más tiempo tomó en la práctica?</p>
+            <p class="a">Flyway a mano y la concurrencia de stock/recetas, porque ambas tocan directamente el adaptador de persistencia — ya identificado en la diapositiva anterior como el más costoso.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 8 -->
+      <details class="card" id="slide-8" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num">8</span>
+          <span class="summary-text">
+            <span class="card-title">El giro de la historia</span>
+            <span class="card-tag">Cuando la teoría se encontró con el navegador</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">74 de 74 tests en verde. El reactor Maven compilaba limpio. ¿Listo para producción? No.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Esta diapositiva es la bisagra emocional de la charla: todo lo verificable con herramientas automáticas — compilación, tests unitarios de dominio y aplicación — pasaba en verde. Pero ningún test unitario levanta un <code class="inline">ApplicationContext</code> de Spring real, ninguno abre un navegador, ninguno prueba que dos contenedores Docker se hablen por la red. Los tres casos que siguen solo existieron el día que se corrió <code class="inline">docker compose up</code> de verdad y se hizo login desde el navegador.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Todo lo que se podía verificar automáticamente estaba en verde. Pero un test unitario no sabe si Spring realmente puede arrancar, ni si el navegador puede hablarle al backend. Eso solo se descubre probándolo de verdad."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿No se supone que los tests existen justamente para evitar esto?</p>
+            <p class="a">Los tests unitarios de dominio y aplicación (los 74 que pasaban) verifican reglas de negocio sin Spring ni base de datos — es una elección consciente del proyecto para que el núcleo sea rápido de probar. El costo es que necesitan un complemento: pruebas de integración con Testcontainers, que hoy son justamente el pendiente #4 documentado.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 9 -->
+      <details class="card" id="slide-9" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num">9</span>
+          <span class="summary-text">
+            <span class="card-title">Caso real 1 — La casa sin puertas</span>
+            <span class="card-tag">Bootstrap wiring nunca conectado</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Promociones y Clientes/Seguros/Crédito tenían todo escrito — y la aplicación jamás hubiera podido arrancar.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p><strong>Síntoma:</strong> los controllers, casos de uso y adaptadores de persistencia de dos contextos completos existían, pero nadie los conectaba. <strong>Causa real:</strong> no existía ninguna clase <code class="inline">@Configuration</code> que cablee esos 15 casos de uso como <code class="inline">@Bean</code>. Un <code class="inline">@Bean</code> con un parámetro de un tipo sin implementación registrada <em>compila perfecto</em> — Spring recién resuelve la inyección en tiempo de ejecución, nunca en compilación. <strong>Solución:</strong> se crearon <code class="inline">PromocionUseCaseConfiguration</code> y <code class="inline">ClienteSeguroCreditoUseCaseConfiguration</code>, y se verificó con un cruce sistemático (grep de todas las interfaces <code class="inline">*UseCase</code> contra todos los <code class="inline">@Bean</code> que las devuelven) que no quedara ninguna otra faltante.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Compilar y funcionar son promesas distintas en Hexagonal. El compilador vigila los puertos — nunca revisa si alguien conectó el cable del otro lado. Faltaban dos clases de configuración enteras y el build nunca se quejó."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Cómo se detectó exactamente, si ni compilar ni testear lo mostraba?</p>
+            <p class="a">Arrancando la aplicación real dentro de Docker: Spring falla en tiempo de arranque con <code class="inline">BeanCreationException</code> apenas intenta resolver el primer <code class="inline">@Bean</code> con una dependencia sin proveedor. Ese error solo aparece al ejecutar, nunca al compilar.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 10 -->
+      <details class="card" id="slide-10" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num">10</span>
+          <span class="summary-text">
+            <span class="card-title">Caso real 2 — El piso se movió</span>
+            <span class="card-tag">Spring Boot 4 modularizó Flyway</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Las 8 migraciones de base de datos existían — y nunca se ejecutaron.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p><strong>Síntoma:</strong> <code class="inline">SchemaManagementException: missing table [...]</code> al arrancar, como si las migraciones jamás hubieran existido. <strong>Causa real:</strong> Spring Boot 4.x dejó de auto-configurar Flyway solo por tener <code class="inline">flyway-core</code> en el classpath — modularizó la autoconfiguración y ahora exige el starter explícito <code class="inline">spring-boot-starter-flyway</code>. La dependencia vieja compilaba perfecto; el proyecto simplemente no sabía que ya no bastaba. <strong>Solución:</strong> una sola línea de cambio en el POM, cero líneas de código Java.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"No es un error de quien migró: es el framework cambiando las reglas de auto-configuración en su propia versión mayor, mientras el proyecto se armaba encima. El piso se movió mientras caminábamos."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Cómo se sabe que no va a volver a pasar con otra dependencia?</p>
+            <p class="a">No se puede garantizar, pero ahora se sabe qué señal buscar: si una dependencia de infraestructura (Liquibase, Actuator, etc.) "compila pero no hace nada visible en el log de arranque", vale la pena revisar si Spring Boot 4.x le exige un starter dedicado — es un patrón nuevo de esta versión mayor, no un caso aislado.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 11 -->
+      <details class="card" id="slide-11" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num">11</span>
+          <span class="summary-text">
+            <span class="card-title">Caso real 3 — El bug que escondía Postgres</span>
+            <span class="card-tag"><code class="inline">lower(bytea)</code> en la búsqueda de productos</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">La búsqueda de productos fallaba exactamente en el caso más común: buscar sin escribir nada.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p><strong>Síntoma:</strong> <code class="inline">GET /api/productos</code> devolvía 500 con <code class="inline">function lower(bytea) does not exist</code>. <strong>Causa real:</strong> la consulta JPQL armaba el patrón con <code class="inline">lower(concat('%', :texto, '%'))</code>; cuando <code class="inline">:texto</code> llega <code class="inline">null</code> (el caso normal al abrir la pantalla de venta), el driver JDBC de PostgreSQL no puede inferir el tipo del parámetro dentro de <code class="inline">concat()</code>/<code class="inline">lower()</code> y lo tipa como <code class="inline">bytea</code> — y <code class="inline">lower(bytea)</code> no existe en Postgres. <strong>Solución:</strong> armar el patrón <code class="inline">%texto%</code> ya en minúsculas en Java, y pasarlo como un único parámetro de texto usado directo en <code class="inline">LIKE</code>, sin <code class="inline">concat()</code>/<code class="inline">lower()</code> en SQL.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Este bug es específico de Postgres: con otro motor de base de datos ni siquiera hubiera aparecido — hubiera aparecido otro, distinto, igual de impredecible. Es la prueba viva de por qué el eje de base de datos importa tanto como los otros dos."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Por qué ningún test unitario lo agarró?</p>
+            <p class="a">Porque los tests de dominio/aplicación usan mocks de los repositorios — nunca ejecutan SQL real contra Postgres. Solo una prueba de integración con Testcontainers, o probarlo en vivo como se hizo acá, hubiera mostrado el error.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 12 -->
+      <details class="card" id="slide-12" style="--layer:var(--c-net)">
+        <summary>
+          <span class="num">12</span>
+          <span class="summary-text">
+            <span class="card-title">Las costuras más chicas</span>
+            <span class="card-tag">CORS y rutas /v1</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Más rápidas de arreglar, igual de invisibles hasta probarlas de verdad.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Sin CORS configurado, el navegador bloqueaba todo <code class="inline">fetch</code> del frontend (<code class="inline">localhost:5173</code>) hacia el backend (<code class="inline">localhost:8088</code>) con el preflight fallido — el <code class="inline">.NET</code> original sí lo tenía. Y 5 de 8 contextos se habían implementado con el prefijo mínimo del documento (<code class="inline">/api/v1/...</code>), mientras el frontend real llama <code class="inline">/api/...</code> sin versión — hubo que reconciliar rutas en varios contextos después.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Ninguno de estos dos rompía un test unitario. Los dos rompían el primer clic real en el navegador — y ninguno se ve si nunca se llega a abrir un navegador de verdad."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Por qué el equipo implementó rutas con /v1 si el frontend nunca las iba a llamar así?</p>
+            <p class="a">Porque el documento de arquitectura listaba ese prefijo como "mínimo" sugerido, y algunos contextos lo siguieron al pie de la letra sin cruzarlo contra el contrato real que ya consumía el frontend React existente.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 13 -->
+      <details class="card" id="slide-13" style="--layer:var(--c-net)">
+        <summary>
+          <span class="num">13</span>
+          <span class="summary-text">
+            <span class="card-title">El eje que no tocamos</span>
+            <span class="card-tag">¿Y si además cambiábamos de base de datos?</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">El documento original sugería SQL Server. Esto es lo que hubiera costado, en concreto.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Cuatro costos concretos: (1) las 9 migraciones Flyway reescritas de cero — <code class="inline">UUID</code> nativo vs <code class="inline">UNIQUEIDENTIFIER</code>, <code class="inline">BOOLEAN</code> vs <code class="inline">BIT</code>, <code class="inline">LIMIT/OFFSET</code> vs <code class="inline">TOP/OFFSET-FETCH</code>; (2) el dialecto de Hibernate cambia entero (<code class="inline">PostgreSQLDialect → SQLServerDialect</code>), y ya se vio hoy que el modo <code class="inline">validate</code> es estricto ante cualquier diferencia sutil; (3) la concurrencia se escribe distinto — <code class="inline">SELECT FOR UPDATE</code> vs <code class="inline">WITH (UPDLOCK, ROWLOCK)</code>, justo la sintaxis que protege stock y recetas retenidas; (4) el bug de la diapositiva 11 no desaparece, cambia de forma — SQL Server suele ser case-insensitive por default, así que ahí el riesgo hubiera sido el opuesto: falsos positivos en búsquedas.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Si además hubiéramos cambiado de Postgres a SQL Server, no es que el bug de hoy desaparecería — cambiaría de forma. Cada motor de base de datos esconde sus propias sorpresas, y solo se descubren corriendo el sistema de verdad contra ese motor."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿El diseño del proyecto ya mitigaba parte de ese riesgo?</p>
+            <p class="a">Sí — los IDs se generan como UUID en el código Java (en la clase base <code class="inline">Entidad</code>), no los genera la base de datos. Eso ya elimina uno de los focos de fricción más comunes al cambiar de motor: las estrategias de generación de claves.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 14 -->
+      <details class="card" id="slide-14" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num">14</span>
+          <span class="summary-text">
+            <span class="card-title">Por qué no cuesta el triple</span>
+            <span class="card-tag">Las costuras crecen combinatorio</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Con 2 ejes moviéndose hay 1 costura. Con 3 ejes hay 3 costuras — el riesgo no suma, multiplica.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Este es el modelo mental que resume toda la charla: los bugs no viven "dentro" de un eje de cambio, viven en la <em>costura</em> entre dos ejes que cambiaron a la vez. Con lenguaje y arquitectura moviéndose juntos, hay exactamente 1 costura — y esa costura sola dio los 3 casos reales de las diapositivas 9-11. Si además se movía la base de datos, aparecerían 2 costuras más (lenguaje×BD, arquitectura×BD) — no el doble de bugs, sino bugs de un tipo completamente distinto en cada una, porque cada costura combina fallas de maneras que ninguna prueba aislada por eje puede anticipar.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Los bugs no viven dentro de un eje, viven en la costura entre dos ejes que se movieron juntos. Movimos dos ejes y ya tuvimos 3 bugs reales en esa única costura. Mover un tercer eje no suma una costura más de trabajo — multiplica las combinaciones posibles."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Esto es una fórmula matemática real o una forma de hablar?</p>
+            <p class="a">Es una forma de hablar con base real: con 2 ejes hay <code class="inline">C(2,2)=1</code> costura posible; con 3 ejes hay <code class="inline">C(3,2)=3</code> costuras de a pares, más la combinación de los tres juntos. No es una fórmula que prediga la cantidad exacta de bugs, pero sí explica por qué el riesgo no crece de forma lineal.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 15 -->
+      <details class="card" id="slide-15" style="--layer:var(--c-java)">
+        <summary>
+          <span class="num">15</span>
+          <span class="summary-text">
+            <span class="card-title">Qué nos blindó de antemano</span>
+            <span class="card-tag">El lado positivo</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">Algunas decisiones ya pagaban este riesgo antes de que apareciera.</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Cuatro decisiones que redujeron el daño real: generar los IDs en el dominio (no en la base de datos) protege contra cambios futuros de motor; puertos y adaptadores explícitos hicieron que el bug de <code class="inline">lower(bytea)</code> se arreglara en un solo archivo adaptador, sin tocar dominio ni aplicación; mantener PostgreSQL en vez de saltar a SQL Server evitó que los 3 casos reales fueran 6, 9 o más; y no reescribir el frontend dejó una sola fuente de verdad del contrato REST contra la cual verificar cada ruta.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"No todo fue sorpresa negativa. Varias decisiones de diseño ya estaban pagando este riesgo de antemano: los IDs los genera el dominio, no la base de datos; los puertos aislaron el daño de cada bug a un solo archivo; y mantener Postgres evitó multiplicar los problemas."</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Si te preguntan</span>
+            <p class="q">¿Cuál de estas cuatro decisiones tuvo el mayor impacto medible?</p>
+            <p class="a">Los puertos y adaptadores explícitos: el bug de <code class="inline">lower(bytea)</code> se corrigió tocando solo <code class="inline">ProductoRepositoryAdapter</code> y su repositorio JPA — cero cambios en <code class="inline">pos-domain</code> o <code class="inline">pos-application</code>. Esa es la inversión de dependencias rindiendo frutos en un caso real, no teórico.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- SLIDE 16 -->
+      <details class="card" id="slide-16" style="--layer:var(--c-neutral)">
+        <summary>
+          <span class="num">16</span>
+          <span class="summary-text">
+            <span class="card-title">Conclusión</span>
+            <span class="card-tag">Cierre — Preguntas</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="hook">La mayor carga nunca fue "aprender Java".</p>
+          <div>
+            <span class="mini-label">A fondo</span>
+            <p>Fue sostener 44 reglas de negocio finas y un contrato REST real mientras se reordenaba la arquitectura entera por debajo — y el framework tampoco se quedaba quieto durante el proceso. Mayor carga de trabajo: el adaptador de persistencia y la multiplicación de puertos propia de Hexagonal. Mayor riesgo: las costuras entre ejes, donde vivieron los 3 bugs reales. Mayor beneficio a cambio: límites de capa verificables por el compilador — el error de arquitectura ahora no compila.</p>
+          </div>
+          <div>
+            <span class="mini-label">Cómo lo dices en voz alta</span>
+            <p class="voice">"Con esto cierro: la mayor carga nunca fue aprender un lenguaje nuevo, fue sostener las reglas de negocio finas mientras se movían dos ejes a la vez. Ganamos límites que ahora vigila el compilador. ¿Preguntas?"</p>
+          </div>
+          <div class="qa">
+            <span class="mini-label">Consejo</span>
+            <p class="a">Si no sabes una respuesta puntual, vuelve al modelo de las costuras (diapositiva 14): "esa fricción específica probablemente vive en la costura entre estos dos ejes" — casi siempre da un punto de partida honesto.</p>
+          </div>
+        </div>
+      </details>
+
+    </section>
+
+    <!-- ======================= PANEL: PROMPTS PARA GEMINI ======================= -->
+    <section class="panel" id="panel-gemini">
+
+      <p class="lead">8 prompts listos para pegar en Gemini (o cualquier generador de imágenes que acepte texto libre) si quieres reemplazar los diagramas nativos del PPTX por ilustraciones a medida. Todos piden explícitamente <strong>sin texto ni letras visibles</strong> — los rótulos y números los pones tú directamente en PowerPoint, así evitas que la IA invente palabras mal escritas dentro de la imagen. Formato de salida sugerido: 16:9, para que encaje sin recortes en una diapositiva completa o como imagen de fondo de una tarjeta.</p>
+
+      <div class="panel-toolbar"><button class="toolbar-btn" id="toggleAllGemini">Expandir todo</button></div>
+
+      <!-- PROMPT 1 -->
+      <details class="card prompt" id="gem-1" style="--layer:var(--c-neutral)">
+        <summary>
+          <span class="num" style="border-radius:8px;">1</span>
+          <span class="summary-text">
+            <span class="card-title">Portada</span>
+            <span class="prompt-slidefor">Para la diapositiva 1</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Imagen de fondo o hero para la portada: dos mundos tecnológicos fusionándose.</p>
+          <div class="prompt-box">Ilustración vectorial plana editorial, estilo tech-corporativo minimalista, formato horizontal 16:9. Escena: dos estructuras arquitectónicas abstractas se fusionan en el centro de la composición — a la izquierda, una torre hecha de anillos concéntricos translúcidos en tono violeta (#512BD4), representando capas envolventes; a la derecha, una estructura modular hexagonal hecha de piezas geométricas separadas en tono verde (#6DB33F) que encajan como engranajes independientes. En el punto donde ambas estructuras se tocan al centro, una costura brillante en color naranja (#E87A1E) sugiere tensión y transformación. Fondo degradado azul marino oscuro (#0F1619) muy sutil. Iluminación suave, sombras largas, composición limpia sin desorden. Sin texto, sin letras, sin números, sin logotipos reales de marcas. Estilo: ilustración editorial de revista tecnológica, líneas limpias, paleta de máximo 4 colores.</div>
+          <button class="copy-btn" data-copy="gem-1">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 2 -->
+      <details class="card prompt" id="gem-2" style="--layer:var(--c-java)">
+        <summary>
+          <span class="num" style="border-radius:8px;">2</span>
+          <span class="summary-text">
+            <span class="card-title">Onion vs. Hexagonal</span>
+            <span class="prompt-slidefor">Para la diapositiva 5</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Reemplazo pulido del diagrama nativo de capas concéntricas vs. módulos hexagonales.</p>
+          <div class="prompt-box">Diagrama técnico ilustrado en estilo vectorial plano, formato horizontal 16:9, dividido en dos mitades claramente separadas por una línea vertical delgada. Mitad izquierda, fondo blanco: cuatro anillos concéntricos de cebolla (onion) vistos en corte transversal, de afuera hacia adentro en tonos de violeta cada vez más oscuro (#C9BDF0 exterior, #7A5CDE centro), representando capas de software una dentro de otra, todo contenido dentro de un único rectángulo redondeado con borde punteado gris (representando "un solo proyecto"). Mitad derecha, fondo blanco: seis módulos geométricos hexagonales pequeños de color verde (#6DB33F) conectados entre sí por líneas rectas finas, cada hexágono claramente separado con espacio en blanco entre ellos y bordes sólidos definidos (representando "módulos independientes"). Ambos lados con iluminación plana, sin sombras duras, estilo infografía corporativa moderna. Sin texto, sin letras, sin números, sin etiquetas.</div>
+          <button class="copy-btn" data-copy="gem-2">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 3 -->
+      <details class="card prompt" id="gem-3" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num" style="border-radius:8px;">3</span>
+          <span class="summary-text">
+            <span class="card-title">El giro de la historia</span>
+            <span class="prompt-slidefor">Para la diapositiva 8</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Metáfora de la falsa sensación de seguridad: todo en verde, y aun así algo no funciona.</p>
+          <div class="prompt-box">Ilustración vectorial plana estilo editorial tech, formato horizontal 16:9, fondo azul marino oscuro (#0F1619). Escena centrada: un panel de control abstracto flotante con varias filas de indicadores tipo semáforo, todos iluminados en verde brillante (#6DB33F), sugiriendo "todo funciona". Justo detrás y ligeramente desenfocado, la silueta de una ventana de navegador web abstracta (sin contenido de interfaz real, solo la forma general del marco de una ventana) muestra en su interior un resplandor rojo tenue (#D9695F) que contrasta con los indicadores verdes del panel — sugiriendo una discrepancia entre "lo que dicen las métricas" y "lo que pasa en la realidad". Composición asimétrica, con espacio negativo generoso a la derecha para agregar texto después. Iluminación dramática tipo spotlight sobre el panel de indicadores. Sin texto, sin letras, sin números, sin iconos de aplicaciones reales.</div>
+          <button class="copy-btn" data-copy="gem-3">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 4 -->
+      <details class="card prompt" id="gem-4" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num" style="border-radius:8px;">4</span>
+          <span class="summary-text">
+            <span class="card-title">Caso 1 — La casa sin puertas</span>
+            <span class="prompt-slidefor">Para la diapositiva 9</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Metáfora literal: una casa completa pero sin puertas que conecten los cuartos.</p>
+          <div class="prompt-box">Ilustración vectorial isométrica de una casa de un piso vista en corte transversal (planta abierta, como una casa de muñecas), estilo editorial minimalista, formato horizontal 16:9, fondo blanco liso. La casa tiene varias habitaciones completamente amuebladas y terminadas (muebles simples y abstractos, sin detalles realistas), cada habitación pintada en un tono distinto de la paleta verde-naranja (#6DB33F, #E87A1E, #B4E197). El detalle clave: los espacios donde deberían ir las puertas entre habitaciones están vacíos, mostrando solo el hueco del marco sin ninguna puerta instalada — los muebles y personas abstractas dentro de cada cuarto no pueden cruzar entre ambientes. Una figura humana abstracta simple (sin rostro, forma geométrica) está de pie frente a uno de los huecos vacíos, con postura de confusión. Iluminación cálida suave, sombras suaves isométricas. Sin texto, sin letras, sin números, sin planos arquitectónicos con anotaciones.</div>
+          <button class="copy-btn" data-copy="gem-4">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 5 -->
+      <details class="card prompt" id="gem-5" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num" style="border-radius:8px;">5</span>
+          <span class="summary-text">
+            <span class="card-title">Caso 2 — El piso se movió</span>
+            <span class="prompt-slidefor">Para la diapositiva 10</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Metáfora: caminar sobre un piso que cambia de posición bajo los pies.</p>
+          <div class="prompt-box">Ilustración vectorial plana estilo editorial tech, formato horizontal 16:9, fondo degradado suave gris claro a blanco. Escena: una figura humana abstracta simple (silueta geométrica sin rostro, color gris oscuro) caminando sobre un sendero hecho de losetas cuadradas flotantes de color naranja (#E87A1E), donde una de las losetas justo debajo del pie de la figura está claramente desplazada y desalineada respecto a las demás, como si se hubiera movido de lugar en el último instante, dejando un pequeño espacio vacío peligroso. Líneas de movimiento sutiles (efecto de "temblor") alrededor de esa loseta desplazada para sugerir inestabilidad. El resto del sendero de losetas se ve firme y ordenado. Estilo limpio, ilustración de infografía moderna, sombras suaves. Sin texto, sin letras, sin números, sin señales de tránsito con palabras.</div>
+          <button class="copy-btn" data-copy="gem-5">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 6 -->
+      <details class="card prompt" id="gem-6" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num" style="border-radius:8px;">6</span>
+          <span class="summary-text">
+            <span class="card-title">Caso 3 — El bug que escondía Postgres</span>
+            <span class="prompt-slidefor">Para la diapositiva 11</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Metáfora de detective: encontrar algo invisible escondido dentro del propio motor de base de datos.</p>
+          <div class="prompt-box">Ilustración vectorial plana estilo editorial tech con toque de misterio/detective, formato horizontal 16:9, fondo azul marino oscuro (#0F1619) con viñeta suave en las esquinas. Escena centrada: una lupa grande de estilo geométrico minimalista (mango y aro simples, sin detalles realistas) flotando frente a un cilindro abstracto que representa una base de datos (forma clásica de "disco" apilado, tono azul elefante #5382A1), y a través del cristal de la lupa se revela, agrandado, un pequeño símbolo geométrico de advertencia (un rombo o triángulo simple, sin texto adentro) en color rojo coral (#D9695F) que no es visible a simple vista fuera de la lupa. Alrededor, partículas de luz tenues sugieren un ambiente de investigación nocturna. Iluminación dramática tipo spotlight sobre la lupa. Sin texto, sin letras, sin números, sin código de programación visible.</div>
+          <button class="copy-btn" data-copy="gem-6">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 7 -->
+      <details class="card prompt" id="gem-7" style="--layer:var(--c-net)">
+        <summary>
+          <span class="num" style="border-radius:8px;">7</span>
+          <span class="summary-text">
+            <span class="card-title">El eje que no tocamos (base de datos)</span>
+            <span class="prompt-slidefor">Para la diapositiva 13</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Metáfora de dos motores de base de datos distintos, uno activo y uno en reposo deliberado.</p>
+          <div class="prompt-box">Ilustración vectorial plana estilo editorial tech, formato horizontal 16:9, fondo blanco. Composición simétrica con dos formas cilíndricas abstractas que representan motores de base de datos (forma de "disco apilado" clásica), una a la izquierda en tono azul elefante (#5382A1, representando PostgreSQL) claramente iluminada, activa, con pequeños engranajes abstractos girando a su alrededor sugiriendo que está en uso. La otra a la derecha en tono rojo apagado (#8B3A3A, representando un motor alternativo), dibujada con líneas punteadas semitransparentes y sin engranajes ni movimiento, sugiriendo una opción que se consideró pero se dejó deliberadamente en reposo, como un camino no tomado. Entre ambas, un pequeño cartel de bifurcación abstracto (dos flechas geométricas simples divergiendo) sin ningún texto. Iluminación plana uniforme, estilo infografía limpia. Sin texto, sin letras, sin números, sin logotipos reales de bases de datos.</div>
+          <button class="copy-btn" data-copy="gem-7">Copiar prompt</button>
+        </div>
+      </details>
+
+      <!-- PROMPT 8 -->
+      <details class="card prompt" id="gem-8" style="--layer:var(--c-bug)">
+        <summary>
+          <span class="num" style="border-radius:8px;">8</span>
+          <span class="summary-text">
+            <span class="card-title">Diagrama combinatorio de 3 ejes</span>
+            <span class="prompt-slidefor">Para la diapositiva 14</span>
+          </span>
+          <span class="chev"></span>
+        </summary>
+        <div class="card-body">
+          <p class="prompt-note">Versión pulida del triángulo de nodos y costuras del PPTX nativo.</p>
+          <div class="prompt-box">Diagrama de red ilustrado en estilo vectorial plano minimalista, formato horizontal 16:9, fondo blanco. Composición: tres nodos circulares grandes dispuestos en forma de triángulo — uno arriba en el centro de color naranja (#E87A1E), uno abajo a la izquierda de color verde (#6DB33F), uno abajo a la derecha de color gris neutro (#98A2AE, más apagado y con borde punteado para sugerir "no activado"). Los tres nodos conectados entre sí por líneas: la línea entre el nodo naranja y el nodo verde es gruesa, sólida y de color rojo coral (#D9695F) con pequeñas chispas o destellos geométricos superpuestos a lo largo de la línea, sugiriendo fricción real y visible. Las otras dos líneas (hacia el nodo gris) son delgadas, discontinuas (punteadas) y de color gris claro, sugiriendo una conexión hipotética que no llegó a activarse. Estilo limpio de diagrama de red científico, sin sombras duras, ligera profundidad con sombra suave debajo de cada nodo. Sin texto, sin letras, sin números, sin etiquetas dentro del diagrama.</div>
+          <button class="copy-btn" data-copy="gem-8">Copiar prompt</button>
+        </div>
+      </details>
+
+      <h2 class="section-title">Cómo usarlos</h2>
+      <div class="faq">
+        <div class="faq-item">
+          <p class="q">¿Dónde pego estos prompts?</p>
+          <p class="a">En Gemini (la app o AI Studio) con generación de imágenes activada, o en cualquier otro generador que acepte texto libre en español. Pega el prompt completo tal cual está en el bloque de código.</p>
+        </div>
+        <div class="faq-item">
+          <p class="q">¿Por qué insisten tanto en "sin texto"?</p>
+          <p class="a">Los modelos de generación de imágenes todavía escriben mal las palabras dentro de las imágenes con frecuencia. Es más prolijo generar la ilustración limpia y agregar los títulos/rótulos directamente en PowerPoint, donde el texto siempre se ve perfecto.</p>
+        </div>
+        <div class="faq-item">
+          <p class="q">¿Qué hago con la imagen una vez generada?</p>
+          <p class="a">Insértala como imagen de fondo de la diapositiva correspondiente (Insertar → Imagen → Enviar al fondo) y baja su opacidad si el texto nativo de la diapositiva pierde legibilidad encima, o úsala en un panel lateral en vez de fondo completo.</p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="foot">Sistema POS Farmacia · guía de sustentación de la migración .NET Onion → Java Hexagonal</footer>
+
+</div>
+
+<script>
+(function(){
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  var panels = { slides: document.getElementById('panel-slides'), gemini: document.getElementById('panel-gemini') };
+  var jumprow = document.getElementById('jumprow');
+
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
+      var target = btn.getAttribute('data-tab');
+      Object.keys(panels).forEach(function(key){ panels[key].classList.toggle('is-active', key === target); });
+      jumprow.classList.toggle('is-hidden', target !== 'slides');
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    });
+  });
+
+  jumprow.querySelectorAll('.jump-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      var el = document.getElementById(chip.getAttribute('data-jump'));
+      if(!el) return;
+      el.open = true;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  function wireToggleAll(buttonId, panelId){
+    var btn = document.getElementById(buttonId);
+    var panel = document.getElementById(panelId);
+    var expanded = false;
+    btn.addEventListener('click', function(){
+      expanded = !expanded;
+      panel.querySelectorAll('details.card').forEach(function(d){ d.open = expanded; });
+      btn.textContent = expanded ? 'Colapsar todo' : 'Expandir todo';
+    });
+  }
+  wireToggleAll('toggleAllSlides', 'panel-slides');
+  wireToggleAll('toggleAllGemini', 'panel-gemini');
+
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var id = btn.getAttribute('data-copy');
+      var box = document.querySelector('#' + id + ' .prompt-box');
+      if(!box) return;
+      var text = box.textContent;
+      var done = function(){
+        var original = btn.textContent;
+        btn.textContent = 'Copiado';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = original; btn.classList.remove('copied'); }, 1600);
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(done);
+      } else {
+        done();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

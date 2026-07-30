@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.posfarmacia</groupId>
+    <artifactId>pos-farmacia</artifactId>
+    <version>0.1.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>pos-bootstrap</artifactId>
+  <packaging>jar</packaging>
+  <name>pos-bootstrap</name>
+  <description>Punto de composicion: aplicacion Spring Boot, wiring de casos de uso con adaptadores, configuracion.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.posfarmacia</groupId>
+      <artifactId>pos-domain</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.posfarmacia</groupId>
+      <artifactId>pos-application</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.posfarmacia</groupId>
+      <artifactId>pos-adapter-in-rest</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.posfarmacia</groupId>
+      <artifactId>pos-adapter-out-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.posfarmacia</groupId>
+      <artifactId>pos-adapter-out-external</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>pos-farmacia</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>com.posfarmacia.bootstrap.PosFarmaciaApplication</mainClass>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
